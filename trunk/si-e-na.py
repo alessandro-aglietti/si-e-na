@@ -31,19 +31,19 @@ class Siena(object):
 		self.window_main.show()
 		
 		# INITIALIZE LEFT PANE: OPEN FILES TREESTORE
-		self.treestore_open_files = gtk.TreeStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_STRING)
+		self.treestore_open_files = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING)
 		
 		self.treeview_open_files = gtk.TreeView(model=self.treestore_open_files)
 		self.treeview_open_files.show()
 		
 		cellrendtext = gtk.CellRendererText()
-		treeviewcol0 = gtk.TreeViewColumn('id', cellrendtext, text=0) #, foreground=3) #la colonna 3 contiene il colore
-		treeviewcol1 = gtk.TreeViewColumn('name', cellrendtext, text=1) #, foreground=3) #la colonna 3 contiene il colore
-		treeviewcol2 = gtk.TreeViewColumn('path', cellrendtext, text=2) #, foreground=3) #la colonna 3 contiene il colore
+		#treeviewcol0 = gtk.TreeViewColumn('id', cellrendtext, text=0) #, foreground=3) #la colonna 3 contiene il colore
+		treeviewcol0 = gtk.TreeViewColumn('name', cellrendtext, text=0) #, foreground=3) #la colonna 3 contiene il colore
+		treeviewcol1 = gtk.TreeViewColumn('path', cellrendtext, text=1) #, foreground=3) #la colonna 3 contiene il colore
 		
 		self.treeview_open_files.append_column(treeviewcol0)
 		self.treeview_open_files.append_column(treeviewcol1)
-		self.treeview_open_files.append_column(treeviewcol2)
+		#self.treeview_open_files.append_column(treeviewcol2)
 		
 		scrolledwindow_open_files = self.builder.get_object('scrolledwindow_open_files')
 		scrolledwindow_open_files.add(self.treeview_open_files)
@@ -111,7 +111,29 @@ class Siena(object):
 
 	def add_file(self, filename):
 		print "ADD FILE FUNCTION %s" % filename
-		self.treestore_open_files.append(parent=None,row=(0, filename, filename))
+		if (os.path.splitext(filename)[1]=='.p7m'):
+			file_iter = self.treestore_open_files.append(parent=None,row=(os.path.basename(filename), filename))
+			
+			#recursive signatures exploring
+			signed_file = filename
+			extension = os.path.splitext(filename)[1]
+			while (extension=='.p7m'):
+				sign_iter = self.treestore_open_files.append(parent=file_iter,row=(os.path.basename(signed_file), signed_file))
+				signed_file_old = signed_file
+				signed_file = os.path.splitext(signed_file)[0]
+				extension = os.path.splitext(signed_file)[1]
+				#extract enveloped file from signed_file_old to signed_file
+				print "EXTRACTING %s to %s" % (signed_file_old, signed_file)
+					
+			#update root file name to the destination unsigned file name
+			unsigned_file = os.path.basename(signed_file)
+			self.treestore_open_files.set_value(file_iter, 0, unsigned_file)
+		else:
+			print "not p7m file"			
+			msg = gtk.MessageDialog(parent=self.window_main, flags=0, type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK, message_format="Please select .p7m files only")
+			msg.run()
+			msg.hide()
+
 
 	#######################################################################################################
 	def testMessageDialog(self):
