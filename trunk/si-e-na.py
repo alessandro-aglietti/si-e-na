@@ -48,8 +48,8 @@ class Siena(object):
 		treeview_open_files.append_column(treeviewcol1)
 		treeview_open_files.append_column(treeviewcol2)
 		
-		hpaned_main = self.builder.get_object('hpaned_main')
-		hpaned_main.add(treeview_open_files)
+		scrolledwindow_open_files = self.builder.get_object('scrolledwindow_open_files')
+		scrolledwindow_open_files.add(treeview_open_files)
 		
 		# INITIALIZE RIGHT PANE: DETAILSTEXTVIEW
 		textbuffer_details = gtk.TextBuffer()
@@ -57,8 +57,9 @@ class Siena(object):
 		textview_details = gtk.TextView(textbuffer_details)
 		textview_details.set_editable(False)
 		textview_details.show()
-		hpaned_main.add(textview_details)
 		
+		scrolledwindow_details = self.builder.get_object('scrolledwindow_details')
+		scrolledwindow_details.add(textview_details)
 		
 		##############
 		##SAMPLE FILLING
