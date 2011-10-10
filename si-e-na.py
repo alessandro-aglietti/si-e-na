@@ -16,6 +16,7 @@ class Siena(object):
 	treeview_open_files = None
 	textbuffer_details = None
 	textview_details = None
+	filechooserdialog_add_files = None
 		
 	def __init__(self):
 		self.builder = gtk.Builder()
@@ -69,7 +70,27 @@ class Siena(object):
 		i = treestore_open_files.append(parent=i,row=(0,"prova2","aaa","green"))
 		
 		textbuffer_details.set_text("----------")
+	
+	def on_toolbutton_add_clicked(self, widget, data=None):
+		print "on_toolbutton_add_clicked"
+		self.filechooserdialog_add_files = gtk.FileChooserDialog(title=None, parent=None, action=gtk.FILE_CHOOSER_ACTION_OPEN, buttons=(gtk.STOCK_OK, gtk.RESPONSE_ACCEPT, gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT), backend=None)
+		self.filechooserdialog_add_files.set_property("select-multiple", True)
+		self.filechooserdialog_add_files.show()
+		self.filechooserdialog_add_files.connect('response', self.on_filechooserdialog_add_files_response)
 		
+	def on_filechooserdialog_add_files_response(self, widget, data=None):
+		print "on_filechooserdialog_add_files_response"
+		if (data==gtk.RESPONSE_ACCEPT):
+			self.filechooserdialog_add_files.hide()
+			files_to_add = self.filechooserdialog_add_files.get_filenames()
+			print "FILES TO ADD: %s" % files_to_add
+			for file_to_add in files_to_add:
+				self.add_file(file_to_add)
+		else:
+			self.filechooserdialog_add_files.hide()	
+	
+	def on_toolbutton_delete_clicked(self, widget, data=None):
+		print "on_toolbutton_delete_clicked"
 		
 	def on_imagemenuitem_about_activate(self, widget, data=None):
 		about_dialog = gtk.AboutDialog()
@@ -92,8 +113,8 @@ class Siena(object):
 		print "EXITING"
 		gtk.main_quit()
 
-
-
+	def add_file(self, filename):
+		print "ADD FILE FUNCTION %s" % filename
 
 	#######################################################################################################
 	def testMessageDialog(self):
