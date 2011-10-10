@@ -215,7 +215,22 @@
           </packing>
         </child>
         <child>
-          <placeholder/>
+          <object class="GtkHPaned" id="hpaned_main">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="position">170</property>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
         </child>
         <child>
           <object class="GtkStatusbar" id="statusbar_main">

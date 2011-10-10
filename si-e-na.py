@@ -12,6 +12,11 @@ class Siena(object):
 	builder = None
 	window_main = None
 	
+	treestore_open_files = None
+	treeview_open_files = None
+	textbuffer_details = None
+	textview_details = None
+		
 	def __init__(self):
 		self.builder = gtk.Builder()
 		self.builder.add_from_file( 'si-e-na.glade' )
@@ -24,35 +29,45 @@ class Siena(object):
 	def initialize(self):
 		self.window_main.show()
 		
-		##############
-		treestore = gtk.TreeStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_STRING)
-		treestore.append(parent=None,row=(0,"prova0","aaa"))
-		treestore.append(parent=None,row=(0,"prova1","aaa"))
-		i = treestore.append(parent=None,row=(0,"prova2","aaa"))
-		i = treestore.append(parent=i,row=(0,"prova2","aaa"))
+		# INITIALIZE LEFT PANE: OPEN FILES TREESTORE
+		treestore_open_files = gtk.TreeStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
 		
-		treeview = gtk.TreeView(model=treestore)
-		treeview.show()
+		treeview_open_files = gtk.TreeView(model=treestore_open_files)
+		treeview_open_files.show()
 		
 		cellrendtext = gtk.CellRendererText()
-		treeviewcol0 = gtk.TreeViewColumn('Column 0', cellrendtext, text=0, foreground=1)
-		treeviewcol1 = gtk.TreeViewColumn('Column 1', cellrendtext, text=1, foreground=1)
-		treeviewcol2 = gtk.TreeViewColumn('Column 2', cellrendtext, text=2, foreground=1)
+		treeviewcol0 = gtk.TreeViewColumn('Column 0', cellrendtext, text=0, foreground=3) #la colonna 3 contiene il colore
+		treeviewcol1 = gtk.TreeViewColumn('Column 1', cellrendtext, text=1, foreground=3) #la colonna 3 contiene il colore
+		treeviewcol2 = gtk.TreeViewColumn('Column 2', cellrendtext, text=2, foreground=3) #la colonna 3 contiene il colore
 		
 		#treeviewcol0.pack_start(cellrendtext, True)
 		#treeviewcol1.pack_start(cellrendtext, True)
 		#treeviewcol2.pack_start(cellrendtext, True)
 		
-		treeview.append_column(treeviewcol0)
-		treeview.append_column(treeviewcol1)
-		treeview.append_column(treeviewcol2)
+		treeview_open_files.append_column(treeviewcol0)
+		treeview_open_files.append_column(treeviewcol1)
+		treeview_open_files.append_column(treeviewcol2)
 		
-		#vbox_main = self.builder.get_object('vbox_main')
-		#vbox_main.add(treeview)
-		#vbox_main.reorder_child(treeview, 2)
+		hpaned_main = self.builder.get_object('hpaned_main')
+		hpaned_main.add(treeview_open_files)
+		
+		# INITIALIZE RIGHT PANE: DETAILSTEXTVIEW
+		textbuffer_details = gtk.TextBuffer()
+		textbuffer_details.set_text("")
+		textview_details = gtk.TextView(textbuffer_details)
+		textview_details.set_editable(False)
+		textview_details.show()
+		hpaned_main.add(textview_details)
 		
 		
 		##############
+		##SAMPLE FILLING
+		treestore_open_files.append(parent=None,row=(0,"prova0","aaa","red"))
+		treestore_open_files.append(parent=None,row=(0,"prova1","aaa","blue"))
+		i = treestore_open_files.append(parent=None,row=(0,"prova2","aaa","black"))
+		i = treestore_open_files.append(parent=i,row=(0,"prova2","aaa","green"))
+		
+		textbuffer_details.set_text("----------")
 		
 		
 	def on_imagemenuitem_about_activate(self, widget, data=None):
