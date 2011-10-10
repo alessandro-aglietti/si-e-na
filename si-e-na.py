@@ -24,6 +24,37 @@ class Siena(object):
 	def initialize(self):
 		self.window_main.show()
 		
+		##############
+		treestore = gtk.TreeStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_STRING)
+		treestore.append(parent=None,row=(0,"prova0","aaa"))
+		treestore.append(parent=None,row=(0,"prova1","aaa"))
+		i = treestore.append(parent=None,row=(0,"prova2","aaa"))
+		i = treestore.append(parent=i,row=(0,"prova2","aaa"))
+		
+		treeview = gtk.TreeView(model=treestore)
+		treeview.show()
+		
+		cellrendtext = gtk.CellRendererText()
+		treeviewcol0 = gtk.TreeViewColumn('Column 0', cellrendtext, text=0, foreground=1)
+		treeviewcol1 = gtk.TreeViewColumn('Column 1', cellrendtext, text=1, foreground=1)
+		treeviewcol2 = gtk.TreeViewColumn('Column 2', cellrendtext, text=2, foreground=1)
+		
+		#treeviewcol0.pack_start(cellrendtext, True)
+		#treeviewcol1.pack_start(cellrendtext, True)
+		#treeviewcol2.pack_start(cellrendtext, True)
+		
+		treeview.append_column(treeviewcol0)
+		treeview.append_column(treeviewcol1)
+		treeview.append_column(treeviewcol2)
+		
+		#vbox_main = self.builder.get_object('vbox_main')
+		#vbox_main.add(treeview)
+		#vbox_main.reorder_child(treeview, 2)
+		
+		
+		##############
+		
+		
 	def on_imagemenuitem_about_activate(self, widget, data=None):
 		about_dialog = gtk.AboutDialog()
 		about_dialog.set_version("0.1.0")
