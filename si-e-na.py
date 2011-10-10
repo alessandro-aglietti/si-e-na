@@ -31,45 +31,41 @@ class Siena(object):
 		self.window_main.show()
 		
 		# INITIALIZE LEFT PANE: OPEN FILES TREESTORE
-		treestore_open_files = gtk.TreeStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
+		self.treestore_open_files = gtk.TreeStore(gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_STRING)
 		
-		treeview_open_files = gtk.TreeView(model=treestore_open_files)
-		treeview_open_files.show()
+		self.treeview_open_files = gtk.TreeView(model=self.treestore_open_files)
+		self.treeview_open_files.show()
 		
 		cellrendtext = gtk.CellRendererText()
-		treeviewcol0 = gtk.TreeViewColumn('Column 0', cellrendtext, text=0, foreground=3) #la colonna 3 contiene il colore
-		treeviewcol1 = gtk.TreeViewColumn('Column 1', cellrendtext, text=1, foreground=3) #la colonna 3 contiene il colore
-		treeviewcol2 = gtk.TreeViewColumn('Column 2', cellrendtext, text=2, foreground=3) #la colonna 3 contiene il colore
+		treeviewcol0 = gtk.TreeViewColumn('id', cellrendtext, text=0) #, foreground=3) #la colonna 3 contiene il colore
+		treeviewcol1 = gtk.TreeViewColumn('name', cellrendtext, text=1) #, foreground=3) #la colonna 3 contiene il colore
+		treeviewcol2 = gtk.TreeViewColumn('path', cellrendtext, text=2) #, foreground=3) #la colonna 3 contiene il colore
 		
-		#treeviewcol0.pack_start(cellrendtext, True)
-		#treeviewcol1.pack_start(cellrendtext, True)
-		#treeviewcol2.pack_start(cellrendtext, True)
-		
-		treeview_open_files.append_column(treeviewcol0)
-		treeview_open_files.append_column(treeviewcol1)
-		treeview_open_files.append_column(treeviewcol2)
+		self.treeview_open_files.append_column(treeviewcol0)
+		self.treeview_open_files.append_column(treeviewcol1)
+		self.treeview_open_files.append_column(treeviewcol2)
 		
 		scrolledwindow_open_files = self.builder.get_object('scrolledwindow_open_files')
-		scrolledwindow_open_files.add(treeview_open_files)
+		scrolledwindow_open_files.add(self.treeview_open_files)
 		
 		# INITIALIZE RIGHT PANE: DETAILSTEXTVIEW
-		textbuffer_details = gtk.TextBuffer()
-		textbuffer_details.set_text("")
-		textview_details = gtk.TextView(textbuffer_details)
-		textview_details.set_editable(False)
-		textview_details.show()
+		self.textbuffer_details = gtk.TextBuffer()
+		self.textbuffer_details.set_text("")
+		self.textview_details = gtk.TextView(self.textbuffer_details)
+		self.textview_details.set_editable(False)
+		self.textview_details.show()
 		
 		scrolledwindow_details = self.builder.get_object('scrolledwindow_details')
-		scrolledwindow_details.add(textview_details)
+		scrolledwindow_details.add(self.textview_details)
 		
 		##############
 		##SAMPLE FILLING
-		treestore_open_files.append(parent=None,row=(0,"prova0","aaa","red"))
-		treestore_open_files.append(parent=None,row=(0,"prova1","aaa","blue"))
-		i = treestore_open_files.append(parent=None,row=(0,"prova2","aaa","black"))
-		i = treestore_open_files.append(parent=i,row=(0,"prova2","aaa","green"))
+		#treestore_open_files.append(parent=None,row=(0,"prova0","aaa"))
+		#treestore_open_files.append(parent=None,row=(0,"prova1","aaa"))
+		#i = treestore_open_files.append(parent=None,row=(0,"prova2","aaa"))
+		#i = treestore_open_files.append(parent=i,row=(0,"prova2","aaa"))
 		
-		textbuffer_details.set_text("----------")
+		self.textbuffer_details.set_text("----------")
 	
 	def on_toolbutton_add_clicked(self, widget, data=None):
 		print "on_toolbutton_add_clicked"
@@ -115,6 +111,7 @@ class Siena(object):
 
 	def add_file(self, filename):
 		print "ADD FILE FUNCTION %s" % filename
+		self.treestore_open_files.append(parent=None,row=(0, filename, filename))
 
 	#######################################################################################################
 	def testMessageDialog(self):
