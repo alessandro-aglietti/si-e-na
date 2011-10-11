@@ -7,8 +7,12 @@ import gtk
 import gobject
 import os
 import re
+import subprocess
 
 class Siena(object):
+	OPENSSL_COMMAND = 'openssl'
+	CERT_OUTPUT_EXT = '.txt'
+	
 	builder = None
 	window_main = None
 	
@@ -31,7 +35,7 @@ class Siena(object):
 		self.window_main.show()
 		
 		# INITIALIZE LEFT PANE: OPEN FILES TREESTORE
-		self.treestore_open_files = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING)
+		self.treestore_open_files = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
 		
 		self.treeview_open_files = gtk.TreeView(model=self.treestore_open_files)
 		self.treeview_open_files.show()
@@ -44,6 +48,8 @@ class Siena(object):
 		self.treeview_open_files.append_column(treeviewcol0)
 		self.treeview_open_files.append_column(treeviewcol1)
 		#self.treeview_open_files.append_column(treeviewcol2)
+		
+		self.treeview_open_files.connect('cursor-changed', self.on_treeview_open_files_cursor_changed)
 		
 		scrolledwindow_open_files = self.builder.get_object('scrolledwindow_open_files')
 		scrolledwindow_open_files.add(self.treeview_open_files)
@@ -64,8 +70,7 @@ class Siena(object):
 		#treestore_open_files.append(parent=None,row=(0,"prova1","aaa"))
 		#i = treestore_open_files.append(parent=None,row=(0,"prova2","aaa"))
 		#i = treestore_open_files.append(parent=i,row=(0,"prova2","aaa"))
-		
-		self.textbuffer_details.set_text("----------")
+		#self.textbuffer_details.set_text("----------")
 	
 	def on_toolbutton_add_clicked(self, widget, data=None):
 		print "on_toolbutton_add_clicked"
@@ -109,31 +114,74 @@ class Siena(object):
 		print "EXITING"
 		gtk.main_quit()
 
+	def on_treeview_open_files_cursor_changed(self, treeview, data=None):
+		print "cursor-changed"
+		(model, iter) = treeview.get_selection().get_selected()
+		cert_column_value = self.treestore_open_files.get_value(iter, 2)
+		if (cert_column_value != None):
+			self.textbuffer_details.set_text(cert_column_value)
+		else:
+			self.textbuffer_details.set_text("")
+			
+		
+		
 	def add_file(self, filename):
 		print "ADD FILE FUNCTION %s" % filename
 		if (os.path.splitext(filename)[1]=='.p7m'):
-			file_iter = self.treestore_open_files.append(parent=None,row=(os.path.basename(filename), filename))
+			file_iter = self.treestore_open_files.append(parent=None,row=(os.path.basename(filename), filename, None))
 			
 			#recursive signatures exploring
 			signed_file = filename
 			extension = os.path.splitext(filename)[1]
 			while (extension=='.p7m'):
-				sign_iter = self.treestore_open_files.append(parent=file_iter,row=(os.path.basename(signed_file), signed_file))
 				signed_file_old = signed_file
 				signed_file = os.path.splitext(signed_file)[0]
 				extension = os.path.splitext(signed_file)[1]
-				#extract enveloped file from signed_file_old to signed_file
-				print "EXTRACTING %s to %s" % (signed_file_old, signed_file)
-					
+				self.process_p7m_file(signed_file_old, signed_file, file_iter)
+				
 			#update root file name to the destination unsigned file name
 			unsigned_file = os.path.basename(signed_file)
 			self.treestore_open_files.set_value(file_iter, 0, unsigned_file)
 		else:
-			print "not p7m file"			
-			msg = gtk.MessageDialog(parent=self.window_main, flags=0, type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK, message_format="Please select .p7m files only")
+			msg_text = "Unable to open %s, not a .p7m file" % filename
+			print msg_text			
+			msg = gtk.MessageDialog(parent=self.window_main, flags=0, type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_OK, message_format=msg_text)
 			msg.run()
 			msg.hide()
-
+	
+	def process_p7m_file(self, filename_in, filename_out, parent_iter):
+		print "PROCESS P7M FILE %s TO %s" % (filename_in, filename_out)
+		
+		#1. add the p7m signature row to the treemodel as child of the file iter
+		sign_iter = self.treestore_open_files.append(parent=parent_iter,row=(os.path.basename(filename_in), filename_in, None))
+		
+		#2. verify and decrypt the signature with openssl
+		# openssl smime -decrypt -verify -inform DER -in "IAVCTD4_RilievoEssenze.dxf.p7m" -noverify -out "IAVCTD4_RilievoEssenze.dxf"
+		verify_arguments = (self.OPENSSL_COMMAND, 'smime', '-decrypt', '-verify', '-inform', 'DER', '-in', filename_in, '-noverify', '-out', filename_out)
+		print "VERIFY args:"
+		print verify_arguments
+		ret_verify = subprocess.call(verify_arguments)
+		print "END VERIFY exit code: %d" % ret_verify
+		
+		if (ret_verify==0):
+			cert_arguments = (self.OPENSSL_COMMAND, 'pkcs7', '-inform', 'DER', '-in', filename_in, '-print_certs', '-text', '-out', "%s%s" % (filename_in, self.CERT_OUTPUT_EXT))
+			print "CERT args:"
+			print cert_arguments
+			ret_cert = subprocess.call(cert_arguments)
+			print "END CERT exit code: %d" % ret_cert
+			file_str = self.read_file_as_string("%s%s" % (filename_in, self.CERT_OUTPUT_EXT))
+			self.treestore_open_files.set_value(sign_iter, 2, file_str)
+			return True
+		else:
+			return False
+	
+	def read_file_as_string(self, filepath):
+		print "READING FILE %s" % filepath  
+		f = open(filepath, 'r')
+		filestring = f.read()
+		f.close()
+		return filestring
+		
 
 	#######################################################################################################
 	def testMessageDialog(self):
