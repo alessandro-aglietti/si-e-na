@@ -35,19 +35,18 @@ class Siena(object):
 		self.window_main.show()
 		
 		# INITIALIZE LEFT PANE: OPEN FILES TREESTORE
-		self.treestore_open_files = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING)
+		self.treestore_open_files = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_PYOBJECT) #description, filepath, cert_text, CertificateInfo class
 		
 		self.treeview_open_files = gtk.TreeView(model=self.treestore_open_files)
+		self.treeview_open_files.set_property('headers-visible', False)
 		self.treeview_open_files.show()
 		
 		cellrendtext = gtk.CellRendererText()
-		#treeviewcol0 = gtk.TreeViewColumn('id', cellrendtext, text=0) #, foreground=3) #la colonna 3 contiene il colore
 		treeviewcol0 = gtk.TreeViewColumn('name', cellrendtext, text=0) #, foreground=3) #la colonna 3 contiene il colore
 		treeviewcol1 = gtk.TreeViewColumn('path', cellrendtext, text=1) #, foreground=3) #la colonna 3 contiene il colore
 		
 		self.treeview_open_files.append_column(treeviewcol0)
-		self.treeview_open_files.append_column(treeviewcol1)
-		#self.treeview_open_files.append_column(treeviewcol2)
+		#self.treeview_open_files.append_column(treeviewcol1)
 		
 		self.treeview_open_files.connect('cursor-changed', self.on_treeview_open_files_cursor_changed)
 		
@@ -116,19 +115,19 @@ class Siena(object):
 
 	def on_treeview_open_files_cursor_changed(self, treeview, data=None):
 		print "cursor-changed"
-		(model, iter) = treeview.get_selection().get_selected()
-		cert_column_value = self.treestore_open_files.get_value(iter, 2)
-		if (cert_column_value != None):
-			self.textbuffer_details.set_text(cert_column_value)
-		else:
-			self.textbuffer_details.set_text("")
-			
-		
-		
+		(model, iter) = treeview.get_selection().get_selected() #controllare che iter sia valorizzatop
+		if (iter):
+			cert_column_value = self.treestore_open_files.get_value(iter, 2)
+			if (cert_column_value != None):
+				self.textbuffer_details.set_text(cert_column_value)
+			else:
+				self.textbuffer_details.set_text("")
+				
+				
 	def add_file(self, filename):
 		print "ADD FILE FUNCTION %s" % filename
 		if (os.path.splitext(filename)[1]=='.p7m'):
-			file_iter = self.treestore_open_files.append(parent=None,row=(os.path.basename(filename), filename, None))
+			file_iter = self.treestore_open_files.append(parent=None,row=(os.path.basename(filename), filename, None, None))
 			
 			#recursive signatures exploring
 			signed_file = filename
@@ -153,7 +152,7 @@ class Siena(object):
 		print "PROCESS P7M FILE %s TO %s" % (filename_in, filename_out)
 		
 		#1. add the p7m signature row to the treemodel as child of the file iter
-		sign_iter = self.treestore_open_files.append(parent=parent_iter,row=(os.path.basename(filename_in), filename_in, None))
+		sign_iter = self.treestore_open_files.append(parent=parent_iter,row=(os.path.basename(filename_in), filename_in, None, None))
 		
 		#2. verify and decrypt the signature with openssl
 		# openssl smime -decrypt -verify -inform DER -in "IAVCTD4_RilievoEssenze.dxf.p7m" -noverify -out "IAVCTD4_RilievoEssenze.dxf"
@@ -171,6 +170,9 @@ class Siena(object):
 			print "END CERT exit code: %d" % ret_cert
 			file_str = self.read_file_as_string("%s%s" % (filename_in, self.CERT_OUTPUT_EXT))
 			self.treestore_open_files.set_value(sign_iter, 2, file_str)
+			certinfo = self.get_certificate_info(file_str)
+			self.treestore_open_files.set_value(sign_iter, 3, certinfo)
+			self.treestore_open_files.set_value(sign_iter, 0, certinfo.subject['CN'])
 			return True
 		else:
 			return False
@@ -182,6 +184,38 @@ class Siena(object):
 		f.close()
 		return filestring
 		
+	def get_certificate_info(self, str):
+		certinfo = CertificateInfo()
+		
+		match = re.search("Issuer: (.*)", str)
+		if (match):
+			#issuer found
+			issuer_str = match.group(1)
+			print "ISSUER: %s" % issuer_str
+			certinfo.issuer = self.extract_dn_properties(issuer_str)
+			
+		match = re.search("Subject: (.*)", str)
+		if (match):
+			#subject found
+			subject_str = match.group(1)
+			print "SUBJECT: %s" % subject_str
+			certinfo.subject = self.extract_dn_properties(subject_str) 
+			
+		return certinfo
+
+	def extract_dn_properties(self, dn_str):
+		retHash = {}
+		dn_parts = dn_str.split(",")
+		for part in dn_parts:
+			match = re.search("([A-Z]*)=(.*)", part)
+			if (match):
+				property = match.group(1)
+				value = match.group(2)
+				print "PROP=%s, VALUE=%s" % (property, value)
+				retHash[property] = value
+		return retHash
+		
+	
 
 	#######################################################################################################
 	def testMessageDialog(self):
@@ -289,6 +323,11 @@ class Siena(object):
 		#		match = re.search("voltage: (.*)", line)
 		#		if (match):
 		#			voltage = match.group(1).strip()
+
+class CertificateInfo(object):
+	subject = None
+	issuer = None
+	
 
 if __name__ == "__main__":
 	app = Siena()
