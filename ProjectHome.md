@@ -1,0 +1,1 @@
+The project is a gui written in pygtk to explore and extract signed files from the p7m format. It will support p7m sha-1 and p7m sha-256 cades encryption (by openssl).
